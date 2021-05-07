@@ -141,9 +141,6 @@ def print_jargons(data):
     print()
 
 
-# 使用户输入有效的result
-
-
 # 据输入的condition和result生成图像和最短路径
 def receive_input():
     example_condition = "money supply +"
@@ -180,7 +177,7 @@ print_jargons(graph)
 mirror_graph()
 random_variable = random.choice(jargons)
 
-# receive_input()
+receive_input()
 
 # DrawDiGraph(graph,'government borrowing +', 'investment -')# crowding out
 
