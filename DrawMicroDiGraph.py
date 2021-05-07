@@ -1,9 +1,13 @@
 import networkx as nx
 import matplotlib.pyplot as plt
-import re
 from textwrap import fill
 import random
 
+# 该程序里的时间方向严格意义指的因到果的方向（或者key到value的方向，min path里右箭头的方向）
+# 因此就算考虑到时间倒流或某人穿越回过去，即时间不单调，该程序的输出不受影响，因为因果链不变（逻辑关系不变）
+# 所以宏观经济中的a导致b到底是什么？如果是因果链，那么a+导致a-不就矛盾了吗，正如因为a白所以a黑？
+# 如果是时间，即a+后经过了t时间长度发生b+，那么如何能保证这个时间系统是自洽的呢？方程组(所有存在的路径)的个数大于未知数(edge)的个数不能保证这一点
+# 若每个量随时间的变化是连续的，也即len(jargons)元微分方程组，那参数（每个量的变化受其他量的变化的影响的权重）该如何设才能保证方程组存在解呢？
 graph = {'reserve require ratio -': ['money supply +'],
          'money supply +': ['nominal interest rate -'],
          'real interest rate -': ['nominal interest rate -', 'consumption +', 'investment +'],  # real?
@@ -26,12 +30,11 @@ graph = {'reserve require ratio -': ['money supply +'],
          'capital stock +': ['aggregate supply +'],
          'technology +': ['aggregate supply +'],
          'aggregate supply +': ['price level +'],
-
          }
 
 
-
 # spending multiplier
+# government deficit + → government borrowing + 或许不能添加到里面，或由于这是直接人为干涉，而graph里的据假设都是自然会发生的；这两个变量并不构成因果
 
 
 def DrawDiGraph(data, start, end):
@@ -51,7 +54,7 @@ def DrawDiGraph(data, start, end):
         for v in data[key]:
             # edges.append((key,v))
             edges.append((fill(key, width), fill(v, width)))
-            # jargons.append(key[:-2])
+            # jargons.append(v[:-2])
 
     # print(nodes)
     # print(edges)
@@ -60,26 +63,12 @@ def DrawDiGraph(data, start, end):
     g_nx.add_edges_from(edges)
     nx.draw(g_nx, with_labels=True, node_color='r', node_size=500, font_size=6.5)
     path = findShortestPath(graph, start, end)
-    # 这句改成path = findShortestPath(graph,start,end,path=[start,end])后，图上显示no path，findShortestPath里的path变量没变，一直是['A', 'G']
+
     if path:
-        plt.title(fill("min path : " + ' →'.join(path), 100))
+        plt.title(fill("min path : " + ' → '.join(path), 100))
     else:
         plt.title("No path from {} to {}".format(start, end))
     plt.show()
-
-
-# 找到一条从start到end的路径
-def findPath(graph, start, end, path=[]):
-    path = path + [start]  # 即把start一项添加到path末尾
-
-    if start == end:
-        return path
-    for node in graph[start]:
-        if node not in path:
-            newpath = findPath(graph, node, end, path)
-            if newpath:
-                return newpath
-    return None
 
 
 # 找到所有从start到end的路径
@@ -93,7 +82,6 @@ def findAllPath(graph, start, end, path=[]):
     if start in graph:
         for node in graph[start]:
             if node not in path:
-
                 newpaths = findAllPath(graph, node, end, path)
                 # print("node:{}".format(node))
                 # print("newpaths:{}\n".format(newpaths))
@@ -105,27 +93,17 @@ def findAllPath(graph, start, end, path=[]):
 
 # 查找最短路径
 def findShortestPath(graph, start, end, path=[]):
-    # 传进来的path的赋值确定了每个路径的前几项，若path为空，则路径的前几项为空，然后继续运算（将start添加到path末尾，即path第一项都是'A'）
-    # 若传进来的path=[start,end]，则path前两项是'A'和'G'，第三项（把start添加进来）是'A'，然后再搜索
-    # 这么传的问题是，有一句if node not in path的限制，G已经出现了一次，就无法再在末尾出现，所以找不到符合条件的路径
-    all = findAllPath(graph, start, end, path)
-    # print(all)
-    # print("all:{}".format(all))
-    # print([x.__str__()+"\n" for x in all])
-    # print(list, end="\n")
-    for x in all:
-        print(x)
+    all_path = findAllPath(graph, start, end, path)
     min_len = -1
     min_path = []
-    # print("path:{}".format(path))
-    for pathh in all:
+    for p in all_path:
+        print(p)
         if min_len == -1:
-            min_len = len(pathh)
-            min_path = pathh
-        elif len(pathh) < min_len:
-            min_len = len(pathh)
-            min_path = pathh
-    # print("path:{}".format(path))
+            min_len = len(p)
+            min_path = p
+        elif len(p) < min_len:
+            min_len = len(p)
+            min_path = p
     print("min path:{}".format(min_path))
     return min_path
 
@@ -138,17 +116,19 @@ def opposite(change):
     return altern
 
 
-for key in list(graph.keys()):
-    altern = opposite(key)
+# 将graph据自己作镜像，对每个以±结尾的key和value添加以∓结尾的镜像
+# 之所以可以这么做，是因为graph中没有随时间单调增减的变量（如时间）
+# 之所以没有单调变量，或因为宏观经济中讨论单调变量没有意义
+def mirror_graph():
+    for key in list(graph.keys()):  # 不用global graph是因为list是可变数据类型
+        altern = opposite(key)
+        if altern not in graph:
+            graph[altern] = []
+            for item in graph[key]:
+                graph[altern] += [opposite(item)]
 
-    if altern not in graph:
-        graph[altern] = []
-        for item in graph[key]:
-            graph[altern] += [opposite(item)]
-        # result=re.search(r'^(.+)[+]$',item)
-        # result.group(1)
 
-
+# 打印术语表
 def print_jargons(data):
     global jargons
     for key in data:
@@ -157,62 +137,97 @@ def print_jargons(data):
             jargons.append(v[:-2])
     jargons = list(set(jargons))
     print("jargons: {}".format(jargons))
-    #print(len(jargons))
+    # print(len(jargons))
     print()
 
 
-def loop_condition():
-    global condition
-    condition = condition.strip()
-    if condition == "":
-        condition = "money supply +"
-    else:
-        while condition[-2:] != " +" and condition[-2:] != " -":
-            condition = input('condition must end in " +" or " -": ')
-            loop_condition()
-        if condition[:-2] not in jargons:
-            condition = input('condition must be in jargons: ')
-            loop_condition()
+# 使用户输入有效的result
 
 
-def loop_result():
-    global result
-    result = result.strip()
-    if result == "":
-        result = "GDP"
-    else:
-        while not result[-1].isalpha():
-            result = input('result must end in letter: ')
-            loop_result()
-        if result not in jargons:
-            result = input('result must be in jargons: ')
-            loop_result()
-
-
+# 据输入的condition和result生成图像和最短路径
 def receive_input():
-    global condition
-    global result
+    example_condition = "money supply +"
+    example_result = "GDP"
 
-    print('example of condition: money supply +')
-    condition = input('condition: ')
-    loop_condition()
+    print('example of condition (default): {}'.format(example_condition))
+    condition = input('condition: ').strip()
+    while not ((condition[-2:] == " +" or condition[-2:] == " -") and condition[:-2] in jargons):
+        if condition == "":
+            condition = example_condition
+        elif condition[-2:] != " +" and condition[-2:] != " -":
+            condition = input('condition must end in " +" or " -": ').strip()
+        elif condition[:-2] not in jargons:
+            condition = input('condition must be in jargons: ').strip()
 
-    print('example of result: GDP')
-    result = input('result: ')
-    loop_result()
+    print('example of result (default): {}'.format(example_result))
+    result = input('result: ').strip()
+    while not (result[-1:].isalpha() and result in jargons):
+        if result == "":
+            result = example_result
+        elif not result[-1:].isalpha():
+            result = input('result must end in letter: ').strip()
+        elif result not in jargons:
+            result = input('result must be in jargons: ').strip()
+
     print()
-
     DrawDiGraph(graph, condition, result + ' +')
     print()
     DrawDiGraph(graph, condition, result + ' -')
 
 
 jargons = []
-condition = ""
-result = ""
 print_jargons(graph)
+mirror_graph()
+random_variable = random.choice(jargons)
 
-receive_input()
+# receive_input()
+
 # DrawDiGraph(graph,'government borrowing +', 'investment -')# crowding out
 
-# DrawDiGraph(graph, random.choice(jargons)+random.choice([" +"," -"]), random.choice(jargons)+random.choice([" +"," -"]))
+# DrawDiGraph(graph, random_variable + random.choice([" +", " -"]), random.choice(jargons) + random.choice([" +", " -"]))
+# DrawDiGraph(graph, random_variable + " +", random_variable + " -")
+
+
+# 不够简洁的代码（while循环就可以解决）
+
+
+# 使用户输入有效的condition，递归写法，无返回值，问题在于如果不解开注释一行，则进入while后即使condition为空字符串也不行
+# 之所以要在外面给空字符串赋值，是因为在循环里面赋值的话，每次循环都需要重新更改一下example的值；否则就要global example_condition
+# def loop_condition():
+#     global condition
+#     condition = condition.strip()
+#     print(condition)
+#     if condition == "":
+#         pass
+#         # condition=example_condition
+#
+#     else:
+#         while condition[-2:] != " +" and condition[-2:] != " -":
+#             condition = input('condition must end in " +" or " -": ')
+#             loop_condition()
+#         if condition[:-2] not in jargons:
+#             condition = input('condition must be in jargons: ')
+#             loop_condition()
+
+
+# loop_condition的返回值的递归写法，免去global condition，但每次递归需要传递参数；无需把第一次输入提示放在其他函数中，但第一次后还需额外判断输入是不是None
+# def loop_condition(condition=None, example="money supply +"):
+#     # global condition
+#
+#     if condition is None:
+#         print('example of condition: {}'.format(example))
+#         condition = input('condition: ')
+#
+#     condition = condition.strip()
+#
+#     if condition == "":
+#         condition = example
+#     else:
+#         while condition[-2:] != " +" and condition[-2:] != " -":
+#             condition = input('condition must end in " +" or " -": ')
+#             return loop_condition(condition=condition)
+#         if condition[:-2] not in jargons:
+#             condition = input('condition must be in jargons: ')
+#             return loop_condition(condition=condition)
+#     print("condition{}".format(condition))
+#     return condition
