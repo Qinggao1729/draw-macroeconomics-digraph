@@ -128,16 +128,23 @@ def mirror_graph():
                 graph[altern] += [opposite(item)]
 
 
-# 打印术语表
-def print_jargons(data):
+# 生成术语表
+def generate_jargons(data):
     global jargons
     for key in data:
         jargons.append(key[:-2])
         for v in data[key]:
             jargons.append(v[:-2])
     jargons = list(set(jargons))
+
+
+def generate_Macro_jargons():
+    generate_jargons(graph)
+
+
+def print_Macro_jargons():
     print("jargons: {}".format(jargons))
-    # print(len(jargons))
+    # print("number: {}".format(len(jargons)))
     print()
 
 
@@ -145,6 +152,7 @@ def print_jargons(data):
 def receive_input():
     example_condition = "money supply +"
     example_result = "GDP"
+    print_Macro_jargons()
 
     print('example of condition (default): {}'.format(example_condition))
     condition = input('condition: ').strip()
@@ -172,17 +180,38 @@ def receive_input():
     DrawDiGraph(graph, condition, result + ' -')
 
 
+def two_random_variables():
+    DrawDiGraph(graph, random.choice(jargons) + random.choice([" +", " -"]),
+                random.choice(jargons) + random.choice([" +", " -"]))
+
+
+def one_random_variable():
+    random_variable = random.choice(jargons)
+    DrawDiGraph(graph, random_variable + " +", random_variable + " -")
+
+
+def crowding_out():
+    DrawDiGraph(graph, 'government borrowing +', 'investment -')
+
+
 jargons = []
-print_jargons(graph)
+generate_Macro_jargons()
+# print_Macro_jargons()
 mirror_graph()
-random_variable = random.choice(jargons)
 
-receive_input()
+print("0. Show min path between two inputs, one for the condition and one for the result.")
+print("1. Show min path between two random changes.")
+print("2. Show min path between the increase and decrease of a random variable.")
+print("3. Show the path of the Crowding Out Effect.")
+print("4. Show all variables.")
 
-# DrawDiGraph(graph,'government borrowing +', 'investment -')# crowding out
-
-# DrawDiGraph(graph, random_variable + random.choice([" +", " -"]), random.choice(jargons) + random.choice([" +", " -"]))
-# DrawDiGraph(graph, random_variable + " +", random_variable + " -")
+function_list = [receive_input, two_random_variables, one_random_variable, crowding_out, print_Macro_jargons]
+function_number = len(function_list)
+choice = int(input("Enter your choice (integer between 0 to {}): ".format(function_number - 1)))
+while not 0 <= choice <= function_number - 1:
+    choice = input("Enter your choice (integer between 0 to {}): ".format(function_number - 1))
+print()
+function_list[int(choice)]()
 
 
 # 不够简洁的代码（while循环就可以解决）
