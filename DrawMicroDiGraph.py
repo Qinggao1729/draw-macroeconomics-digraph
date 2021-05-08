@@ -207,12 +207,11 @@ print("4. Show all variables.")
 
 function_list = [receive_input, two_random_variables, one_random_variable, crowding_out, print_Macro_jargons]
 function_number = len(function_list)
-choice = int(input("Enter your choice (integer between 0 to {}): ".format(function_number - 1)))
-while not 0 <= choice <= function_number - 1:
+choice = input("Enter your choice (integer between 0 to {}): ".format(function_number - 1))
+while not (choice.isnumeric() and 0 <= int(choice) <= function_number - 1):
     choice = input("Enter your choice (integer between 0 to {}): ".format(function_number - 1))
 print()
 function_list[int(choice)]()
-
 
 # 不够简洁的代码（while循环就可以解决）
 
