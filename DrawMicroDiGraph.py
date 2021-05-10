@@ -11,9 +11,9 @@ import random
 graph = {'reserve require ratio -': ['money supply +'],
          'money supply +': ['nominal interest rate -'],
          'real interest rate -': ['nominal interest rate -', 'consumption +', 'investment +'],  # real?
-         'nominal interest rate -': ['supply of currency +'],  # nominal?
+         'nominal interest rate -': ['supply of currency +'],  # real?
          'supply of currency +': ['exchange rate -'],
-         'exchange rate -': ['net exports +'],  # ?
+         'exchange rate -': ['net exports +'],
          'net exports +': ['aggregate demand +'],
          'aggregate demand +': ['GDP +', 'price level +'],
          'GDP +': ['unemployment -', 'money demand +'],
@@ -29,7 +29,7 @@ graph = {'reserve require ratio -': ['money supply +'],
          'labor +': ['aggregate supply +'],
          'capital stock +': ['aggregate supply +'],
          'technology +': ['aggregate supply +'],
-         'aggregate supply +': ['price level +'],
+         'aggregate supply +': ['price level -'],
          }
 
 
